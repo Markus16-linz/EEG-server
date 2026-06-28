@@ -79,7 +79,7 @@ app.post(
                     },
                     {
                         onConflict:
-                            'user_ref,result_date'
+                            'userID,result_date'
                     });
 
             if (error) {
