@@ -109,65 +109,39 @@ app.post(
     }
 );
 */
-app.post(
-    '/save-kwh',
-    authenticateToken,
-    async (req, res) => {
+app.post('/save-kwh', authenticateToken, async (req, res) => {
 
-        try {
+    try {
 
-            console.log("req.user =", req.user);
-            console.log("req.body =", req.body);
+        const { date, nightEnergyWh } = req.body;
 
-            const {
-                result_date,
-                optimized_kwh
-            } = req.body;
+        const { data, error } = await supabase
+            .from('pv_results')
+            .upsert({
+                userID: req.user.uid,
+                result_date: date,
+                optimized_kwh: nightEnergyWh
+            }, {
+                onConflict: 'userID,result_date'
+            })
+            .select();
 
-            const result =
-                await supabase
-                    .from('pv_results')
-                    .upsert(
-                        {
-                            userID: req.user.userID,
-                            result_date,
-                            optimized_kwh
-                        },
-                        {
-                            onConflict: 'userID,result_date'
-                        }
-                    )
-                    .select();
-
-            console.log(result);
-
-            if (result.error) {
-
-                console.error(result.error);
-
-                return res.status(500).json({
-                    success: false
-                });
-            }
-
-            res.json({
-                success: true
-            });
-
-        } catch (err) {
-
-            console.error(err);
-
-            res.status(500).json({
-                success: false
-            });
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ success: false });
         }
-    }
-);
 
+        console.log("DB WRITE OK:", data);
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
+});
 
 //************** dailycontrolPlan vom Server bereitstellen ********************************
-app
 app.get(
     '/daily-control-plan',
     authenticateToken,
