@@ -54,13 +54,15 @@ function authenticateToken(req, res, next) {
 
 
 //************** Speichere optimierte Kwh in DB  ********************************
+/*
 app.post(
     '/save-kwh',
     authenticateToken,
     async (req, res) => {
 
         try {
-
+           
+            
             const {
                 result_date,
                 optimized_kwh
@@ -81,6 +83,7 @@ app.post(
                         onConflict:
                             'userID,result_date'
                     });
+            
 
             if (error) {
 
@@ -105,8 +108,62 @@ app.post(
         }
     }
 );
+*/
+app.post(
+    '/save-kwh',
+    authenticateToken,
+    async (req, res) => {
 
+        try {
 
+            console.log("req.user =", req.user);
+            console.log("req.body =", req.body);
+
+            const {
+                result_date,
+                optimized_kwh
+            } = req.body;
+
+            const result =
+                await supabase
+                    .from('pv_results')
+                    .upsert(
+                        {
+                            userID: req.user.userID,
+                            result_date,
+                            optimized_kwh
+                        },
+                        {
+                            onConflict: 'userID,result_date'
+                        }
+                    )
+                    .select();
+
+            console.log(result);
+
+            if (result.error) {
+
+                console.error(result.error);
+
+                return res.status(500).json({
+                    success: false
+                });
+            }
+
+            res.json({
+                success: true
+            });
+
+        } catch (err) {
+
+            console.error(err);
+
+            res.status(500).json({
+                success: false
+            });
+        }
+    }
+);
 
 
 //************** dailycontrolPlan vom Server bereitstellen ********************************
